@@ -1,4 +1,4 @@
-import { paramsConfig } from '../const/index.js';
+import { paramsConfig } from "../const/index.js";
 
 export function getDiameterRanges(min, max, label, spacing) {
   let diameterRanges = [];
@@ -427,31 +427,195 @@ function calculateRecruitment(
 }
 
 const getParam = () => {
-  const nowPlace = localStorage.getItem('selectedPlace');
+  const nowPlace = localStorage.getItem("selectedPlace");
   return paramsConfig[nowPlace];
-}
+};
 
 // 计算正态分布的累积分布函数 (CDF) - pnorm
 export function pnorm(x) {
-    return (1 + erf(x / Math.SQRT2)) / 2;
+  return (1 + erf(x / Math.SQRT2)) / 2;
 }
 
 // 计算正态分布的概率密度函数 (PDF) - dnorm
 export function dnorm(x) {
-    return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+  return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
 }
 
 // 误差函数 erf (用于计算 CDF)
 function erf(x) {
-    let sign = x < 0 ? -1 : 1;
-    x = Math.abs(x);
+  let sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
 
-    let a1 =  0.254829592, a2 = -0.284496736, a3 =  1.421413741;
-    let a4 = -1.453152027, a5 =  1.061405429;
-    let p  =  0.3275911;
+  let a1 = 0.254829592,
+    a2 = -0.284496736,
+    a3 = 1.421413741;
+  let a4 = -1.453152027,
+    a5 = 1.061405429;
+  let p = 0.3275911;
 
-    let t = 1 / (1 + p * x);
-    let y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  let t = 1 / (1 + p * x);
+  let y =
+    1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
 
-    return sign * y;
+  return sign * y;
+}
+
+export function cutting(data, N1, D, q, harvestPriority, plantingOptions) {
+  let result = []; // 存储调整后的数据
+  let groupedData = {}; // 存储每个径阶的数据
+
+  // 计算所有径阶的中值
+  let diameterList = [
+    ...new Set(data.map((item) => parseFloat(item["径阶"]))),
+  ].sort((a, b) => a - b);
+
+  let targetDiameter = findDiameterClass(D, diameterList);
+
+  if (!targetDiameter) {
+    console.error(`输入的 D=${D} 不在径阶范围内`);
+    return;
+  }
+
+  // 按径阶分组数据
+  data.forEach((item) => {
+    let diameter = item["径阶"];
+    if (!groupedData[diameter]) {
+      groupedData[diameter] = [];
+    }
+    groupedData[diameter].push({ tree: item["树种"], count: item["株数"] });
+  });
+
+  let targetIndex = diameterList.indexOf(targetDiameter); // 找到 D 对应径阶的索引
+  let firstDiameter = diameterList[0]; // **获取最小径阶**
+
+  // 遍历所有径阶
+  diameterList.forEach((diameter, index) => {
+    let Ni =
+      index <= targetIndex
+        ? Math.round(N1 * Math.pow(q, targetIndex - index))
+        : 0; // 超出D的径阶目标为0
+
+    let trees = groupedData[diameter] || []; // 获取当前径阶的树木信息
+
+    let totalCount = trees.reduce((sum, t) => sum + t.count, 0); // 计算当前径阶总株数
+
+    // **仅在最小径阶补植**
+    if (diameter === firstDiameter && totalCount < Ni) {
+      let needed = Ni - totalCount;
+      let plantingTree =
+        plantingOptions[Math.floor(Math.random() * plantingOptions.length)]; // 随机选择补植树种
+      trees.push({ tree: plantingTree, count: needed });
+    }
+
+    // **所有径阶都需要检查是否采伐**
+    if (totalCount > Ni) {
+      let toCut = totalCount - Ni;
+      harvestPriority.forEach((preferredTree) => {
+        let treeEntry = trees.find((t) => t.tree === preferredTree);
+        if (treeEntry && toCut > 0) {
+          let cutAmount = Math.min(treeEntry.count, toCut);
+          treeEntry.count -= cutAmount;
+          toCut -= cutAmount;
+        }
+      });
+
+      // // **移除被完全采伐的树种**
+      // groupedData[diameter] = trees.filter(t => t.count > 0);
+    }
+
+    // **记录调整后的数据**
+    (groupedData[diameter] || []).forEach((treeEntry) => {
+      result.push({
+        径阶: diameter,
+        树种: treeEntry.tree,
+        株数: treeEntry.count,
+      });
+    });
+  });
+
+  return result;
+}
+
+function findDiameterClass(D, diameterList) {
+  for (let i = 0; i < diameterList.length; i++) {
+    let mid = diameterList[i]; // 这是径阶中值
+    let min = mid - 2.5; // 计算当前径阶的下界
+    let max = mid + 2.5; // 计算当前径阶的上界
+    if (D >= min && D < max) {
+      return mid; // 找到D所属的径阶
+    }
+  }
+  return null; // 如果找不到，返回null
+}
+
+
+export function calculateCurveData(B,D,q){
+    let k2 = Math.PI / 40000;
+
+    let h = 5;
+    let result =0;
+    let currentValue = 7.5;
+    let power = D / 5;
+
+    while (currentValue <= D + h/2){
+        result += currentValue ** 2 * Math.pow(q,power-1)
+        power -= 1;
+        currentValue += 5;
+    }
+
+    let k3 = k2 * result;
+    let N1 = B / k3;
+    
+    return N1;
+}
+
+export function exportResultsToCSV(results, resultNames, csvName) {
+  const allDbhs = new Set();
+  const finalRows = [];
+
+  // 收集所有出现过的径阶
+  results.forEach(result => {
+    result.forEach(({ 径阶 }) => {
+      allDbhs.add(String(径阶));
+    });
+  });
+
+  const sortedDbhs = Array.from(allDbhs).sort((a, b) => Number(a) - Number(b));
+  const headers = ["树种", "样地名称", ...sortedDbhs];
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const plotName = resultNames[i];
+
+    // 树种 => { 径阶 => 株数 }
+    const treeMap = new Map();
+
+    result.forEach(({ 树种, 径阶, 株数 }) => {
+      if (!treeMap.has(树种)) {
+        treeMap.set(树种, {});
+      }
+      treeMap.get(树种)[径阶] = 株数 || 0;
+    });
+
+    for (const [树种, dbhMap] of treeMap.entries()) {
+      const row = [树种, plotName, ...sortedDbhs.map(d => dbhMap[d] || 0)];
+      finalRows.push(row);
+    }
+  }
+
+  const csvRows = [
+    "\uFEFF" + headers.join(","),  // 加上 BOM 头防乱码
+    ...finalRows.map(row => row.join(","))
+  ];
+
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = csvName+".csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  console.log("✅ CSV 导出完成！");
 }

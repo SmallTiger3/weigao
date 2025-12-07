@@ -1,5 +1,5 @@
 <script lang="js" setup>
-import { getDiameterRanges, convertData, calculateDiameterRange, transMatrixYuCe } from './utils'
+import { getDiameterRanges, convertData, calculateDiameterRange, transMatrixYuCe, cutting, calculateCurveData } from './utils'
 import { useToast } from './components/useToast'
 import Papa from 'papaparse'
 import { ref } from 'vue'
@@ -60,6 +60,9 @@ const handleData = (data) => {
   const { label, min, max, spacing } = constParams;
   const diameterRanges = getDiameterRanges(min, max, label, spacing);
   firstData = calculateDiameterRange(originData, diameterRanges, area.value);//result为径阶整化结果
+  if (!resultList.value.length) {
+    resultList.value.push({ type: 'init', data: firstData, year: 0 });
+  }
   useToast().success("数据解析完成!");
   console.log('firstData :>> ', firstData);
 }
@@ -217,6 +220,10 @@ const cutOnce = () => {
   }
 
   const currentData = resultList.value[resultList.value.length - 1];
+  const { B, D, Q } = bdqParams.value;
+  const n1 = (calculateCurveData(B, D, Q) * area.value) / 10000;
+  const nowRes = cutting(currentData.data, n1, D, Q, cutSelectedSpecies.value, [fillSelectedSpecies.value]);
+  resultList.value.push({ type: 'cut', data: nowRes, year: currentData.year });
 }
 
 // 清空内容
@@ -338,7 +345,7 @@ const clearData = () => {
       <span class="label">mat</span>
     </label>
     <button class="btn btn-ghost" @click="predictFiveYears">预测 5 年</button>
-    <button class="btn btn-ghost">砍伐</button>
+    <button class="btn btn-ghost" @click="cutOnce">砍伐</button>
   </div>
 
   <div class="bg-base-100 px-4">
