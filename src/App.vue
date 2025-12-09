@@ -22,10 +22,10 @@ const constParams = {
   spacing: 5,
 }
 
-const area = ref(70)
+const area = ref()
 const slope = ref(0)
-const precipitation = ref(730)
-const temperature = ref(9.8)
+const precipitation = ref()
+const temperature = ref()
 
 const bdqParams = ref({
   B: null,
@@ -43,7 +43,7 @@ const allTreeSpecies = ref([]);
 const fillSelectedSpecies = ref('');
 const cutSelectedSpecies = ref([]);
 
-const place = ref('chongqing');
+const place = ref(localStorage.getItem('selectedPlace') ?? 'chongqing');
 const savePlace = () => {
   localStorage.setItem('selectedPlace', place.value);
 };
@@ -54,8 +54,8 @@ const selectedFileName = ref('')
 
 
 const handleData = (data) => {
-  // originData = convertData(data);
-  originData = createCsvData(); // mock 数据
+  originData = convertData(data);
+  // originData = createCsvData(); // mock 数据
   allTreeSpecies.value = [...new Set(originData.map(item => item['树种']))];
   const { label, min, max, spacing } = constParams;
   const diameterRanges = getDiameterRanges(min, max, label, spacing);

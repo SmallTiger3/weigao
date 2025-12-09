@@ -65,7 +65,8 @@ export function calculateDiameterRange(data, diameterRanges, area) {
  */
 export function convertData(rawData) {
   const realData = rawData.slice(1); // 去掉表头
-  const formattedData = realData.map((row) => {
+  const filterData = realData.filter(v => v[0])
+  const formattedData = filterData.map((row) => {
     return {
       树种: row[rawData[0].indexOf("树种")],
       胸径: row[rawData[0].indexOf("胸径")],

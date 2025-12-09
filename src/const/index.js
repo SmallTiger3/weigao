@@ -1,6 +1,6 @@
 export const paramsConfig = {
-  chongqing: {
-    name: "重庆",
+  qingyang: {
+    name: "庆阳",
     speciesGrowthParams: {
       辽东栎: {
         r1: 2.59 * 10 ** 0,
@@ -141,8 +141,8 @@ export const paramsConfig = {
       },
     },
   },
-  qingyang: {
-    name: "庆阳",
+  chongqing: {
+    name: "重庆",
     speciesGrowthParams: {
       栎类: {
         r1: 6.34 * 0.1,
