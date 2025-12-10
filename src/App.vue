@@ -60,9 +60,6 @@ const handleData = (data) => {
   const { label, min, max, spacing } = constParams;
   const diameterRanges = getDiameterRanges(min, max, label, spacing);
   firstData = calculateDiameterRange(originData, diameterRanges, area.value);//result为径阶整化结果
-  if (!resultList.value.length) {
-    resultList.value.push({ type: 'init', data: firstData, year: 0 });
-  }
   useToast().success("数据解析完成!");
   console.log('firstData :>> ', firstData);
 }
@@ -186,7 +183,8 @@ const predictFiveYears = () => {
   }
 
   if (!resultList.value.length) {
-    resultList.value.push({ type: 'init', data: firstData, year: 0 });
+    useToast().warning("请先处理数据！");
+    return;
   }
   const currentData = resultList.value[resultList.value.length - 1];
   const nowRes = transMatrixYuCe(currentData.data, area.value, slope.value, temperature.value, precipitation.value, constParams.spacing, 1);
@@ -224,6 +222,22 @@ const cutOnce = () => {
   const n1 = (calculateCurveData(B, D, Q) * area.value) / 10000;
   const nowRes = cutting(currentData.data, n1, D, Q, cutSelectedSpecies.value, [fillSelectedSpecies.value]);
   resultList.value.push({ type: 'cut', data: nowRes, year: currentData.year });
+}
+
+// 第一次处理数据
+const loadFirstData = () => {
+  if (!firstData) {
+    useToast().warning("请先上传并解析数据！");
+    return;
+  }
+  if (!area.value) {
+    useToast().warning("请先填写面积！");
+    return;
+  }
+
+  if (!resultList.value.length) {
+    resultList.value.push({ type: 'init', data: firstData, year: 0 });
+  }
 }
 
 // 清空内容
@@ -366,6 +380,7 @@ const openTableModal = (data) => {
       <input type="text" placeholder="在此输入温度数据" :value="temperature" @change="inputChange($event, 'temperature')" />
       <span class="label">mat</span>
     </label>
+    <button class="btn btn-ghost" @click="loadFirstData">处理数据</button>
     <button class="btn btn-ghost" @click="predictFiveYears">预测 5 年</button>
     <button class="btn btn-ghost" @click="cutOnce">砍伐</button>
   </div>
@@ -391,7 +406,7 @@ const openTableModal = (data) => {
         <div style="width: 1600px;" class="flex flex-row gap-12 flex-wrap">
           <template v-for="(value, index) in resultList" :key="index">
             <chartCom :type="value.type" :id="'chart-' + value.year" :data="value.data" :bdq="bdqParams"
-              :year="value.year" @open-table-modal="openTableModal" />
+              :year="value.year" :area="+area" @open-table-modal="openTableModal" />
           </template>
         </div>
       </div>

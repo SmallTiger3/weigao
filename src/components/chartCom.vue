@@ -28,6 +28,10 @@ const props = defineProps({
     year: {
         type: Number,
         required: false
+    },
+    area: {
+        type: Number,
+        required: true
     }
 })
 
@@ -41,7 +45,13 @@ onMounted(() => {
 });
 
 const initChart = (data) => {
-    const { datasets, treeSpecies, diameterClasses } = getDatasets(data)
+    const newData = data.map(item => {
+        return {
+            ...item,
+            "株数": (item["株数"] / props.area) * 10000  // 转换为株数/公顷
+        }
+    })
+    const { datasets, treeSpecies, diameterClasses } = getDatasets(newData)
 
     const curveDataPoints = getCurveDataPoints()
 
@@ -92,7 +102,7 @@ const initChart = (data) => {
                     stacked: true,  // 堆积柱状图需要堆积在一起
                     title: {
                         display: true,
-                        text: "株数",
+                        text: "株数/公顷",
                         font: { size: 14 }
                     },
                     grid: {
@@ -209,6 +219,7 @@ const getDatasets = (data) => {
             backgroundColor: getRandomColor(),
         };
     });
+    console.log('datasets :>> ', datasets);
     return { datasets, treeSpecies, diameterClasses }
 }
 
