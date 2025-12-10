@@ -161,9 +161,9 @@ const useBDQ = (index) => {
   });
   const selected = bdqList.value[index];
   bdqParams.value = {
-    B: selected.B,
-    D: selected.D,
-    Q: selected.Q
+    B: +selected.B,
+    D: +selected.D,
+    Q: +selected.Q
   };
 };
 
