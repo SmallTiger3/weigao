@@ -218,7 +218,6 @@ export function calculateByDiameter(
         totalBasalArea
       ) / spacing;
 
-    //庆阳的，记为0
     let mortality = calculateMortality(
       treeType,
       diameterClass,
@@ -229,7 +228,6 @@ export function calculateByDiameter(
       map,
       totalBasalArea
     );
-    //let mortality = 0;
 
     // 初始化树种数据
     if (!forestData[treeType]) {
@@ -378,6 +376,7 @@ function calculateMortality(
   totalBasalArea
 ) {
   const allParams = getParam();
+  if (['庆阳'].includes(allParams.name)) return 0
   const speciesMortalityParams = allParams.speciesMortalityParams;
   const { m1, m2dbh, m3SL, m4h1, m5h2, m6MAT, m7MAP, m8B } =
     speciesMortalityParams[treeType];
