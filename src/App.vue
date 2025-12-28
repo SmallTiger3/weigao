@@ -55,7 +55,7 @@ const handleData = (data) => {
   const diameterRanges = getDiameterRanges(min, max, label, spacing);
   firstData = calculateDiameterRange(originData, diameterRanges, area.value);//result为径阶整化结果
   useToast().success("数据解析完成!");
-  console.log('firstData :>> ', firstData);
+  // console.log('firstData :>> ', firstData);
 }
 
 const fileLoad = async (event) => {
