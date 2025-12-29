@@ -622,3 +622,107 @@ export function exportResultsToCSV(results, resultNames, csvName) {
   a.click();
   document.body.removeChild(a);
 }
+
+
+export function calculateVolumeForData(data) {
+    const speciesVolume = {};
+    let totalVolume = 0;
+
+    data.forEach(item => {
+        const { 树种, 径阶, 株数 } = item;
+        let volume = 0;
+
+        // 根据树种选择不同的计算公式
+        switch (树种) {
+            case "栎类":
+            case "辽东栎":
+                volume = 0.000059599783 * Math.pow((0.32819914 + 0.96596294 * 径阶),1.8564005) * Math.pow((径阶/(0.78064739+ 0.04066669 * 径阶)),0.98056206);
+                break;
+            case "马尾松":
+                volume = 0.000060049144 * Math.pow((-0.19006179 + 1.0134423 * 径阶),1.8719753) * Math.pow((径阶/(1.1388838+ 0.020715501 * 径阶)),0.97180232);
+                break;
+            case "柏木":
+            case "侧柏":
+                volume = 0.000057173591 * Math.pow((0.082547805 + 0.96794776 * 径阶),1.8813305) * Math.pow((径阶/(0.74595341+ 0.046672977 * 径阶)),0.99568845);
+                break;
+            case "硬阔":
+            case "槭树":
+            case "其它树种":
+                volume = 0.000052750716 * Math.pow((0.053351778 + 1.0050781 * 径阶),1.9450324) * Math.pow((径阶/(0.47946061+ 0.046199076 * 径阶)),0.9388533);
+                break;
+            case "软阔":
+                volume = 0.000052750716 * Math.pow((-0.51619463 + 1.0942555 * 径阶),1.9450324) * Math.pow((径阶/(0.74622904+ 0.042052847 * 径阶)),0.9388533);
+                break;
+            default:
+                volume = -1; // 默认公式
+                break;
+        }
+        const totalVolumeForItem = volume * 株数;
+
+        // 累加总材积
+        totalVolume += totalVolumeForItem;
+
+        // 累加每个树种的材积
+        if (!speciesVolume[树种]) speciesVolume[树种] = 0;
+        speciesVolume[树种] += totalVolumeForItem;
+    });
+
+     // 构造最终输出对象
+    const result = { 总材积: totalVolume.toFixed(4) };
+
+    for (const 树种 in speciesVolume) {
+        result[`${树种}占比`] = (speciesVolume[树种] / totalVolume).toFixed(4);
+    }
+
+    return result;
+
+}
+
+
+function calculateDiametervar(data, B, D, q) {
+  
+  const groupedData = {};
+  let diameterDataList = [...new Set(data.map(item => parseFloat(item["径阶"])))].sort((a, b) => a - b);
+  let targetDiameter = findDiameterClass(D, diameterList);
+  // 按径阶分组数据
+    data.forEach(item => {
+        const diameter = Number(item["径阶"]);
+        const count = Number(item["株数"]);
+
+        if (!groupedData[diameter]) {
+            groupedData[diameter] = 0;
+        }
+        groupedData[diameter] += count;
+        
+    });
+    let targetIndex = diameterDataList.indexOf(targetDiameter); // 找到 D 对应径阶的索引
+
+    
+    const N1 = calculateCurveData(B, D, q);
+
+    let sumSq = 0;
+    let count = 0;
+
+    diameterDataList.forEach((diameter, index) => {
+        if (index > targetIndex) return; // 只算 D 及以下
+        const Ni = index <= targetIndex ? Math.round(N1 * Math.pow(q, targetIndex - index)) : 0; // 超出D的径阶目标为0
+        // 实际株数
+        const actualCount = groupedData[diameter] || 0;
+
+        if (actualCount <= 0 || Ni <= 0) {
+        invalid = true;   // 标记为不可计算
+        return;
+    }
+
+        const lnDiff = Math.log(actualCount) - Math.log(Ni);
+        sumSq += lnDiff * lnDiff;
+        count++;
+    });
+    // 最终结果
+    const Var = invalid ? null : sumSq / count;//这里需要用const还是let？
+    return Var;
+
+}
+
+
+
