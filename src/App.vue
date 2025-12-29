@@ -214,7 +214,8 @@ const cutOnce = () => {
 
   const currentData = resultList.value[resultList.value.length - 1];
   const { B, D, Q } = bdqParams.value;
-  const n1 = (calculateCurveData(B, D, Q) * area.value) / 10000;
+  const n1 = calculateCurveData(B, D, Q);
+  //const n1 = (calculateCurveData(B, D, Q) * area.value) / 10000;
   const nowRes = cutting(currentData.data, n1, D, Q, cutSelectedSpecies.value, [fillSelectedSpecies.value]);
   resultList.value.push({ type: 'cut', data: nowRes, year: currentData.year });
 }
@@ -274,7 +275,8 @@ const exportCSV = () => {
     return v.data.map(item => {
       return {
         ...item,
-        "株数": Math.round((item["株数"] / Number(area.value)) * 10000),  // 转换为株数/公顷
+        "株数": Math.round(item["株数"]),  // 转换为株数/公顷
+        // "株数": Math.round((item["株数"] / Number(area.value)) * 10000),  // 转换为株数/公顷
       }
     })
   })

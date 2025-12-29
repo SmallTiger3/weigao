@@ -184,7 +184,8 @@ const getDatasets = (originData) => {
     let data = originData.map(item => {
         return {
             ...item,
-            "株数": Math.round((item["株数"] / props.area) * 10000),  // 转换为株数/公顷
+            // "株数": Math.round((item["株数"] / props.area) * 10000),  // 转换为株数/公顷
+            "株数": Math.round(item["株数"]),  // 转换为株数/公顷
             "径阶": `${+item["径阶"] - 2.5}`
         }
     }).filter(v => v["株数"] !== 0)

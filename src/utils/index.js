@@ -47,9 +47,10 @@ export function calculateDiameterRange(data, diameterRanges, area) {
       formattedResult.push({
         树种: treeType,
         径阶: label,
-        株数: result[treeType][label].株数,
-        //每公顷株数: result[treeType][label].株数 / (area / 10000), // 每公顷株数
+        // 株数: result[treeType][label].株数,
+        株数: result[treeType][label].株数 / (area / 10000), // 每公顷株数
       });
+
     }
   }
 
@@ -76,8 +77,8 @@ export function convertData(rawData) {
 }
 
 // 预测函数
-export function transMatrixYuCe(result, area, sl, mat, map, spacing, size) {
-  let formattedResult = processDiameterData(result, area);
+export function transMatrixYuCe(result, sl, mat, map, spacing, size) {
+  let formattedResult = processDiameterData(result);
   let { totalBasalArea, speciesDiversity, diameterDiversity } = formattedResult;
 
   let growthByDiameter1 = calculateByDiameter(
@@ -88,8 +89,7 @@ export function transMatrixYuCe(result, area, sl, mat, map, spacing, size) {
     sl,
     mat,
     map,
-    spacing,
-    area
+    spacing
   ); //这个最好输出一个result结果，到时候便于操作
 
   result = growthByDiameter1;
@@ -97,14 +97,14 @@ export function transMatrixYuCe(result, area, sl, mat, map, spacing, size) {
   return result;
 }
 
-export function processDiameterData(diameterData, area) {
+export function processDiameterData(diameterData) {
   let totalBasalArea = 0;
   let speciesBasalAreas = {}; // 按树种汇总胸高断面积
   let diameterBasalAreas = {}; // 按径阶汇总胸高断面积
 
   diameterData.forEach((item) => {
     let { 树种, 径阶, 株数 } = item;
-    let basalArea = calculateBasalArea(径阶, area);
+    let basalArea = calculateBasalArea(径阶);
     let totalBasalAreaForItem = basalArea * 株数;
 
     // 累加胸高断面积
@@ -143,8 +143,8 @@ export function processDiameterData(diameterData, area) {
   };
 }
 
-export function calculateBasalArea(diameter, area) {
-  return (Math.PI * Math.pow(diameter / 2, 2)) / area;
+export function calculateBasalArea(diameter) {
+  return (Math.PI * Math.pow(diameter / 2, 2)) / 10000;
 }
 export function calculateSpeciesDiversity(speciesBasalAreas, totalBasalArea) {
   let diversityIndex = 0;
@@ -180,8 +180,7 @@ export function calculateByDiameter(
   slope,
   mat,
   map,
-  spacing,
-  area
+  spacing//,area
 ) {
   if (data.length === 0) return "无数据";
   let forestData = {}; // 存储树种、径阶、株数
@@ -193,7 +192,7 @@ export function calculateByDiameter(
     let treeType = row["树种"];
     let diameterClass = row["径阶"];
     let stock = row["株数"]; // 获取株数
-    let speciesStock = stock / (area / 10000);
+    let speciesStock = stock; //stock / (area / 10000);
 
     if (!speciesTotalStock[treeType]) {
       speciesTotalStock[treeType] = 0;
@@ -260,7 +259,7 @@ export function calculateByDiameter(
       map,
       totalBasalArea
     );
-    forestData[treeType]["进界株数"] = (recruitment * area) / 10000;
+    forestData[treeType]["进界株数"] = recruitment; //(recruitment * area) / 10000;
   });
 
   // **更新径阶的株数**
@@ -504,7 +503,13 @@ export function cutting(data, N1, D, q, harvestPriority, plantingOptions) {
       let needed = Ni - totalCount;
       let plantingTree =
         plantingOptions[Math.floor(Math.random() * plantingOptions.length)]; // 随机选择补植树种
-      trees.push({ tree: plantingTree, count: needed });
+       let existing = trees.find(t => t.tree === plantingTree);
+        if (existing) {
+            existing.count += needed; // 累加
+        } else {
+            trees.push({ tree: plantingTree, count: needed });
+        }
+      //trees.push({ tree: plantingTree, count: needed });
     }
 
     // **所有径阶都需要检查是否采伐**
