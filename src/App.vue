@@ -221,7 +221,7 @@ const cutOnce = () => {
 
 // 第一次处理数据
 const loadFirstData = () => {
-  if (!firstData) {
+  if (!originData) {
     useToast().warning("请先上传并解析数据！");
     return;
   }
