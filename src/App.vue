@@ -47,15 +47,12 @@ const selectedFileName = ref('')
 
 
 
-const handleData = (data) => {
-  originData = convertData(data);
-  // originData = createCsvData(); // mock 数据
+const handleData = () => {
   allTreeSpecies.value = [...new Set(originData.map(item => item['树种']))];
   const { label, min, max, spacing } = constParams;
   const diameterRanges = getDiameterRanges(min, max, label, spacing);
   firstData = calculateDiameterRange(originData, diameterRanges, area.value);//result为径阶整化结果
-  useToast().success("数据解析完成!");
-  // console.log('firstData :>> ', firstData);
+  console.log('firstData :>> ', firstData);
 }
 
 const fileLoad = async (event) => {
@@ -73,7 +70,9 @@ const fileLoad = async (event) => {
       Papa.parse(csvContent, {
         complete: function (result) {
           if (result.data[0].includes('树种') && result.data[0].includes('胸径')) {
-            handleData(result.data);
+            originData = convertData(result.data);
+            // originData = createCsvData(); // mock 数据
+            useToast().success("数据解析完成!");
           } else {
             useToast().error("CSV 文件格式不正确，请确保包含 '树种' 和 '胸径' 列!");
             return;
@@ -230,6 +229,8 @@ const loadFirstData = () => {
     useToast().warning("请先填写面积！");
     return;
   }
+  
+  handleData()
 
   if (!resultList.value.length) {
     resultList.value.push({ type: 'init', data: firstData, year: 0 });
